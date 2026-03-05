@@ -5,6 +5,7 @@ from app.db.database import get_db
 from app.db.models import User
 from app.schemas.all import UserCreate, UserResponse, Token
 from app.core.security import get_password_hash, verify_password, create_access_token
+from app.api.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -13,7 +14,6 @@ def create_user(user: UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-    
     hashed_password = get_password_hash(user.password)
     db_user = User(email=user.email, hashed_password=hashed_password)
     db.add(db_user)
@@ -32,8 +32,6 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         )
     access_token = create_access_token(subject=user.id)
     return {"access_token": access_token, "token_type": "bearer"}
-
-from app.api.dependencies import get_current_user
 
 @router.get("/me", response_model=UserResponse)
 def read_users_me(current_user: User = Depends(get_current_user)):
