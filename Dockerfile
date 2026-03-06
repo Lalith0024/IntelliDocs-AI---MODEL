@@ -18,7 +18,7 @@ ENV HF_HOME=/app/cache
 ENV TMPDIR=/tmp
 
 # Copy requirements file first for layer caching
-COPY main/requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip && \
@@ -37,4 +37,4 @@ EXPOSE 10000
 
 # Run the application with uvicorn
 # Use 1 worker to save memory
-CMD ["uvicorn", "main.main:app", "--host", "0.0.0.0", "--port", "10000", "--workers", "1"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "10000", "--workers", "1"]

@@ -8,6 +8,7 @@ python-multipart
 sqlalchemy
 passlib[bcrypt]
 pyjwt
+pysqlite3-binary
 chromadb
 pydantic[email]
 pydantic-settings
