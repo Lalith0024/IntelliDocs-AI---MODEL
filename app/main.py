@@ -1,14 +1,29 @@
+import os
+import sys
+
+# 1. CRITICAL: SQLite Shim for ChromaDB on Linux/Render
 try:
     __import__('pysqlite3')
     import sys
     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+    print("Successfully shimmed sqlite3 with pysqlite3-binary")
 except ImportError:
-    pass
+    print("pysqlite3-binary not found, using system sqlite3")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth, documents, chat
 from app.db.database import create_tables
+
+# 2. Ensure data directories exist
+os.makedirs("data/uploads", exist_ok=True)
+os.makedirs("data/chroma", exist_ok=True)
+
+print("Initializing database tables...")
+create_tables()
+print("Database initialized.")
+
+app = FastAPI(title="Intellidocs AI", version="2.0.0")
 
 # Create tables
 create_tables()
