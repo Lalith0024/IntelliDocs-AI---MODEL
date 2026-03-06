@@ -1,5 +1,5 @@
 import os
-import fitz  # PyMuPDF
+
 
 def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> list[str]:
     """Basic word-based chunker with slightly larger chunks for better context."""
@@ -19,6 +19,7 @@ def extract_text(file_path: str) -> str:
     print(f"DEBUG: Processing file extraction for {file_path} (Extension: {ext})")
     
     if ext == ".pdf":
+        import fitz
         text = ""
         try:
             with fitz.open(file_path) as doc:

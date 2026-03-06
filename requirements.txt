@@ -13,3 +13,5 @@ chromadb
 pydantic[email]
 pydantic-settings
 groq
+pymupdf
+python-multipart

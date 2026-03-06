@@ -12,7 +12,9 @@ except ImportError:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import auth, documents, chat
+from app.api.routes.auth import router as auth_router
+from app.api.routes.documents import router as doc_router
+from app.api.routes.chat import router as chat_router
 from app.db.database import create_tables
 
 # 2. Ensure data directories exist
@@ -25,11 +27,6 @@ print("Database initialized.")
 
 app = FastAPI(title="Intellidocs AI", version="2.0.0")
 
-# Create tables
-create_tables()
-
-app = FastAPI(title="Intellidocs AI", version="2.0.0")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,10 +35,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
-app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
-app.include_router(chat.router, prefix="/api/chats", tags=["chat"])
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(doc_router, prefix="/api/documents", tags=["documents"])
+app.include_router(chat_router, prefix="/api/chats", tags=["chat"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Intellidocs AI Backend"}
+    return {"status": "ok", "message": "Intellidocs AI Backend is running"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy"}
