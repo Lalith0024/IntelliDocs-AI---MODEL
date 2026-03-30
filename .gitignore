@@ -1,5 +1,7 @@
+venv/
 .env
-.venv
 __pycache__/
 *.pyc
-Intellidocs AI - frontend/
+data/
+sql_app.db
+intellidocs AI - frontend

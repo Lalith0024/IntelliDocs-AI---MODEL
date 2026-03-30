@@ -1,113 +1,61 @@
-# 🧠 IntelliDocs AI - Intelligent Backend 
+# IntelliDocs AI - Engine & RAG Pipeline
 
-Frontend repo : https://github.com/Lalith0024/IntelliDocs-AI---frontend
+A production-grade, asynchronous Retrieval-Augmented Generation (RAG) backend API. Built with **FastAPI** to handle high-throughput, low-latency vector search and intelligent document synthesis via Server-Sent Events (SSE).
 
-![Python](https://img.shields.io/badge/Python-3.9-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.95-009688?style=for-the-badge&logo=fastapi&logoColor=white)
-![PyTorch](https://img.shields.io/badge/PyTorch-CPU_Optimized-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+## 🚀 Core Architecture
 
-This repository hosts the **backend infrastructure** for IntelliDocs AI. It is a high-performance, containerized API service that processes natural language queries, performs vector retrieval on evidence files, and generates AI-synthesized answers using a RAG (Retrieval Augmented Generation) pipeline.
-
----
-
-## ⚡ Key Technical Highlights
-
-*   **🔍 Semantic Search Engine**: Uses `sentence-transformers/all-MiniLM-L6-v2` to understand the *meaning* of queries, not just keywords.
-*   **🧩 Vector Database (FAISS)**: Implements Facebook AI Similarity Search for ultra-fast retrieval of relevant document chunks.
-*   **🤖 Generative AI Integration**: Connects to **Groq API (Llama 3)** to synthesize factual answers based strictly on retrieved evidence.
-*   **📉 Memory Optimization**: Custom-tuned Docker configuration using **CPU-only PyTorch** to run efficiently within 512MB RAM constraints (perfect for free-tier deployments like Render).
-*   **⏱️ Lazy Loading Architecture**: Prevents startup crashes by initializing heavy ML models and API clients only when needed.
+- **Protocol**: REST API & SSE (Server-Sent Events)
+- **Framework**: FastAPI (Python 3.12+)
+- **Vector Database**: ChromaDB Persistent Client
+- **Relational Store**: SQLite (via SQLAlchemy ORM)
+- **LLM Integration**: Provider-Agnostic LLM Routing (Groq/OpenAI fallback)
+- **Embeddings**: SentenceTransformers (`all-MiniLM-L6-v2`)
 
 ---
 
-## 🛠️ Technology Stack
+## 🧠 System Capabilities
 
-| Component | Technology | Role |
-| :--- | :--- | :--- |
-| **API Framework** | **FastAPI** | High-speed, async Python web server. |
-| **Machine Learning** | **PyTorch (CPU)** | Runs the neural network for text embeddings. |
-| **Embeddings** | **Sentence-Transformers** | Converts text evidence into 384-dimensional vectors. |
-| **Retrieval** | **FAISS (CPU)** | Finds the most similar vectors to a user's question. |
-| **LLM Inference** | **Groq (Llama 3-8b)** | Generates human-like answers with extreme speed. |
-| **Deployment** | **Docker + Uvicorn** | Containerized standard for consistent production environments. |
+### 1. Hybrid Ingestion Pipeline
+- Supports dynamic text parsing (`.txt`, `.pdf`, `.csv`, `.json`).
+- Automatically chunks large text and streams high-dimensional vector embeddings into local ChromaDB shards.
+- Cross-references metadata with SQLite to establish explicit ownership mappings.
+
+### 2. Intent-Based Routing
+The engine performs a sub-millisecond intent evaluation on every query:
+- `summary`: Triggers 12-doc retrieval for broad aggregations.
+- `audit`: Triggers 12-doc retrieval prioritizing gap-analysis logic.
+- `timeline`: Focuses on chronological event extractions.
+- `default`: Executes standard 6-doc high-precision dense retrieval.
+
+### 3. Asynchronous Neural Streaming
+The engine natively bridges the LLM processing pipeline to an asynchronous event loop via `generate_answer_stream`.
+- **Word-by-Word Yielding**: Bypasses heavy response build times by streaming raw JSON buffers to the client instantly.
+- **Dynamic Context Follow-ups**: Seamlessly triggers secondary logic flows to compute intelligent multi-turn next steps (Dynamic Suggestions) right before terminating the event stream.
 
 ---
 
-## 📂 Project Architecture
+## 🔧 Installation & Deployment
 
-A clean, modular structure designed for scalability and maintenance.
-
+1. **Virtual Environment Setup**
 ```bash
-backend/
-├── 📄 Dockerfile            # Optimized container config (CPU-only PyTorch)
-├── 📄 render.yaml           # Infrastructure-as-Code for Render deployment
-├── 📂 main/
-│   ├── 🐍 main.py           # API Entry point (FastAPI app)
-│   └── 📄 requirements.txt  # Python dependencies
-├── 📂 services/             # Core Logic Modules
-│   ├── 🐍 pipeline.py       # Orchestrator: Connects Search + LLM
-│   ├── 🐍 embedder.py       # Handles text-to-vector conversion
-│   ├── 🐍 retriever.py      # FAISS search implementation
-│   ├── 🐍 loader.py         # Reads & processes .txt evidence files
-│   └── 🐍 llm.py            # Interfaces with Groq/OpenAI API
-└── 📂 data/                 # Evidence files storage
+python3 -m venv venv
+source venv/bin/activate
+```
 
-## 🚀 Optimization Strategy: The "512MB Challenge"
+2. **Dependency Resolution**
+```bash
+pip install -r requirements.txt
+```
 
-Deploying modern AI on free-tier infrastructure requires aggressive optimization. Here is how we achieved it:
+3. **Environment Geometry**
+Create a `.env` file at the root:
+```env
+OPENAI_API_KEY=""
+GROQ_API_KEY="your_api_key_here"
+```
 
-| Strategy | Implementation Details | Impact |
-| :--- | :--- | :--- |
-| **CPU-Only PyTorch** | Explicitly installed the CPU-only wheels via [Dockerfile](cci:7://file:///Users/kasulalalithendra/Desktop/Ml_internshipproject/Dockerfile:0:0-0:0) to avoid massive CUDA binaries. | **Reduced RAM usage by ~500MB** |
-| **Thread Limiting** | Configured `OMP_NUM_THREADS=1` and `MKL_NUM_THREADS=1`. | Prevents memory fragmentation overhead. |
-| **Aggressive GC** | The pipeline triggers `gc.collect()` immediately after building the FAISS index. | Frees ~50MB of temporary tensors instantly. |
-| **Lazy Loading** | The retrieval model and LLM client ([llm.py](cci:7://file:///Users/kasulalalithendra/Desktop/Ml_internshipproject/services/llm.py:0:0-0:0)) are initialized only when needed. | Prevents "Out of Memory" crashes at boot time. |
-
----
-
-## 🔌 API Endpoints
-
-The backend exposes a clean, RESTful API compliant with OpenAPI standards.
-
-### 🧠 1. The Brain (`POST /api/query`)
-Accepts a natural language question and returns a synthesized answer.
-
-*   **Input**:
-    ```json
-    {
-      "question": "Who is the suspect?"
-    }
-    ```
-*   **Output**:
-    ```json
-    {
-      "answer": "The suspect is identified as...",
-      "confidence": "high",
-      "citations": ["police_log.txt", "witness_statement.txt"]
-    }
-    ```
-
-### 📚 2. The Librarian (`GET /api/files`)
-Lists all indexed evidence files with metadata (size, line count).
-
-### 📖 3. The Reader (`GET /api/files/{filename}`)
-Streams the raw text content of a specific evidence document.
-
-### 📊 4. The Analyst (`GET /api/stats`)
-Returns real-time system performance metrics (latency, success rates) for the dashboard.
-
----
-
-## 🚢 Deployment Guide (Render)
-
-This repository is **Deploy-Ready** for Render's container runtime.
-
-1.  **Push to GitHub**: Ensure your code is on the `main` branch.
-2.  **Create Web Service**: Connect your repo on Render.
-3.  **Environment Variables**:
-    *   `GROQ_API_KEY`: Your Groq API Key (starts with `gsk_...`).
-    *   `PORT`: `10000` (Automatically detected).
-4.  **Build & Deploy**: Render will use the [Dockerfile](cci:7://file:///Users/kasulalalithendra/Desktop/Ml_internshipproject/Dockerfile:0:0-0:0) to build the optimized image.
-
-> ⚠️ **Note on Cold Starts**: On free tiers, the service may spin down after 15 minutes of inactivity. The first request might take **~50 seconds** to boot up the Neural Network.
+4. **Launch Engine**
+```bash
+uvicorn app.main:app --reload --port 8000
+```
+*The interactive API documentation is automatically generated at `/docs`.*

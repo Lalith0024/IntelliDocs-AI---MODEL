@@ -8,7 +8,7 @@ python-multipart
 sqlalchemy
 passlib[bcrypt]
 pyjwt
-pysqlite3-binary
+# pysqlite3-binary # (Commented out for macOS compatibility - not needed locally)
 chromadb
 pydantic[email]
 pydantic-settings
