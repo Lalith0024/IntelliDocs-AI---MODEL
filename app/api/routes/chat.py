@@ -50,10 +50,12 @@ async def chat_query_stream(req: ChatQueryRequest, current_user: User = Depends(
         intent = "audit"
     elif any(k in query_lower for k in ["timeline", "events", "when"]):
         intent = "timeline"
+    elif any(k in query_lower for k in ["quiz", "test", "mcq", "questions"]):
+        intent = "quiz"
 
     # 4. HIGH-DENSITY RETRIEVAL (ASYNC-LITE)
     top_k = 12 if intent in ["summary", "audit"] else 6
-    docs = [d for d in search_documents(db, req.question, current_user.id, top_k=top_k)]
+    docs = [d for d in search_documents(db, req.question, current_user.id, top_k=top_k, document_ids=req.document_ids)]
     
     user_display_name = current_user.email.split('@')[0] if current_user.email else "Friend"
 
@@ -117,7 +119,7 @@ def chat_query_sync(req: ChatQueryRequest, current_user: User = Depends(get_curr
     user_msg = Message(chat_id=chat.id, role="user", content=req.question)
     db.add(user_msg)
     
-    docs = search_documents(db, req.question, current_user.id)
+    docs = search_documents(db, req.question, current_user.id, document_ids=req.document_ids)
     user_display_name = current_user.email.split('@')[0] if current_user.email else "Friend"
     answer = generate_answer(req.question, docs, user_name=user_display_name)
     

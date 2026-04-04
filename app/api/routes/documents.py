@@ -62,6 +62,19 @@ def get_documents(
     docs = db.query(Document).filter(Document.user_id == current_user.id).order_by(Document.created_at.desc()).all()
     return docs
 
+from fastapi.responses import FileResponse
+
+@router.get("/{document_id}/content")
+def get_document_content(
+    document_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    doc = db.query(Document).filter(Document.id == document_id, Document.user_id == current_user.id).first()
+    if not doc or not os.path.exists(doc.file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+    return FileResponse(doc.file_path)
+
 @router.delete("/{document_id}")
 def delete_document(
     document_id: str,

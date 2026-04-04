@@ -67,7 +67,7 @@ def add_document_to_index(db: Session, file_path: str, filename: str, document_i
         db.add(chunk_obj)
     db.commit()
 
-def search_documents(db: Session, query: str, user_id: str, top_k: int = 5):
+def search_documents(db: Session, query: str, user_id: str, top_k: int = 5, document_ids: list[str] = None):
     """
     Production-Grade Hybrid Retrieval:
     Uses ChromaDB for optimized vector search + Manual Keyword Boosting.
@@ -76,11 +76,18 @@ def search_documents(db: Session, query: str, user_id: str, top_k: int = 5):
     query_emb = embed_text(query)
     collection = get_collection()
     
+    where_filter = {"user_id": user_id}
+    if document_ids:
+        if len(document_ids) == 1:
+            where_filter = {"$and": [{"user_id": user_id}, {"document_id": document_ids[0]}]}
+        else:
+            where_filter = {"$and": [{"user_id": user_id}, {"document_id": {"$in": document_ids}}]}
+            
     # FETCH BROADER CANDIDATE SET (For Hybrid Re-scoring)
     results = collection.query(
         query_embeddings=[query_emb],
         n_results=top_k * 3, # Get more than needed to re-rank
-        where={"user_id": user_id}
+        where=where_filter
     )
     
     candidate_results = []

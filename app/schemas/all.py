@@ -56,3 +56,4 @@ class ChatListResponse(BaseModel):
 class ChatQueryRequest(BaseModel):
     question: str
     chat_id: Optional[str] = None
+    document_ids: Optional[List[str]] = None

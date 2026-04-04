@@ -13,23 +13,21 @@ def get_client():
         return (None, None)
 
 def generate_answer(question: str, docs: list[dict], user_name: str = "Friend", intent: str = "query") -> str:
-    """
-    Standard Generation Hub (Synchronous Fallback)
-    """
     provider, client = get_client()
     if not client: return "Configure API Key."
 
     persona_prompts = {
-        "summary": "You are the 'Intellidocs Summary Specialist'. Provide a structured bulleted summary of the context.",
-        "audit": "You are the 'Intellidocs Logic Auditor'. Find GAPS, unaddressed risks, and MISSING info in the documents.",
-        "timeline": "You are the 'Intellidocs Chronology Specialist'. Create a strict chronological timeline of events.",
-        "query": "You are the 'Intellidocs Intelligence Assistant'. Answer direct questions with sophisticated sophisticated RAG context."
+        "summary": "You are the 'Intellidocs Summary Specialist'. Provide a structured bulleted summary.",
+        "audit": "Identify gaps in the document.",
+        "timeline": "Create a chronological timeline of events.",
+        "query": "Answer accurately. If explaining, do NOT generate flashcards. Ask: 'Would you like some flashcards?' instead."
     }
 
     base_persona = persona_prompts.get(intent, persona_prompts["query"])
-    context = "\n\n".join([f"DOC: {d['filename']}\nCHUNK: {d['content']}" for d in docs]) if docs else "No docs found."
+    context = "\n\n".join([f"DOC: {d['filename']}\nCHUNK: {d['content']}" for d in docs]) if docs else ""
+    guardrail = "\nIF_NO_CONTEXT: politely refuse to answer." if not docs else ""
 
-    prompt = f"{base_persona}\n\nUSER_NAME: {user_name}\nREPLY_DIRECTLY: Yes\nCITE_SOURCES: Mandatory\n\nCONTEXT:\n{context}\n\nQUERY: {question}"
+    prompt = f"System: {base_persona}\nContext:\n{context}{guardrail}\n\nQuery: {question}"
 
     try:
         model_name = "llama-3.1-8b-instant" if provider == "groq" else "gpt-3.5-turbo"
@@ -45,9 +43,9 @@ def generate_answer(question: str, docs: list[dict], user_name: str = "Friend", 
 
 def generate_dynamic_suggestions(question: str, context_answer: str) -> list[str]:
     provider, client = get_client()
-    if not client: return ["Tell me more about this", "What are the key takeaways?", "Can you summarize?"]
+    if not client: return ["Tell me more", "Summarize", "Key takeaways"]
     
-    prompt = f"Based on the user's question: '{question}' and the AI output snippet: '{context_answer[-500:]}', generate exactly 3 short, distinct, high-quality follow-up questions the user could ask next to dive deeper. Return ONLY a JSON array of 3 strings. Example: [\"question 1\", \"question 2\", \"question 3\"]"
+    prompt = f"Generate 3 follow-up questions for: '{question}'. Return ONLY a JSON array."
     try:
         model_name = "llama-3.1-8b-instant" if provider == "groq" else "gpt-3.5-turbo"
         response = client.chat.completions.create(
@@ -59,52 +57,44 @@ def generate_dynamic_suggestions(question: str, context_answer: str) -> list[str
         content = response.choices[0].message.content.strip()
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "").strip()
-        arr = json.loads(content)
-        if isinstance(arr, list) and len(arr) >= 3:
-            return arr[:3]
-    except Exception as e:
-        pass
-    
-    return ["Tell me more about this", "What are the key takeaways?", "Can you explain this simply?"]
+        return json.loads(content)[:3]
+    except:
+        return ["Tell me more", "What next?", "Explain further"]
 
 async def generate_answer_stream(question: str, docs: list[dict], user_name: str = "Friend", intent: str = "query"):
-    """
-    Production-Grade 'Neural Stream' Generator:
-    This yields word-by-word chunks to the frontend for zero-friction interaction.
-    """
     provider, client = get_client()
     if not client: 
-        yield "data: [ERROR] Configure Your API Keys in .env\n\n"
+        yield "data: [ERROR] Configure Your API Keys\n\n"
         return
 
     persona_prompts = {
-        "summary": "Summarize the context in 3-5 high-impact bullet points. Be direct.",
-        "audit": "Audit the context for gaps, risks, or missing data. Use bullet points.",
-        "timeline": "Extract all dates and events into a chronological list.",
-        "query": "Answer the query based on the context. Cite the filename at the end."
+        "summary": "Summarize in 3-5 bullet points. Use ```summary block.",
+        "audit": "Audit for gaps. Use ```insight block.",
+        "timeline": "Format inside an ```insight block.",
+        "quiz": "Return STRICTLY JSON inside ```quiz block.",
+        "query": "Answer using Markdown. \nSTRICT NEGATIVE CONSTRAINT: NEVER use 'Front:' or 'Back:' labels in your response. NEVER. If you use flashcards, ONLY use the ```flashcard block. \nIF EXPLAINING: Provide explanation then ask: 'Would you like some flashcards for this?'. \nIF COMPANY QUERY: Use a ```chart block for revenue/growth. \nOnly generate the ```flashcard block if the user says 'yes' or asks for it directly."
     }
 
     base_persona = persona_prompts.get(intent, persona_prompts["query"])
     context = "\n\n".join([f"SOURCE: {d['filename']}\nCONTENT: {d['content']}" for d in docs]) if docs else ""
+    guardrail = "\nIF_NO_CONTEXT: Say exactly: 'I don't have enough context...'" if not docs else ""
 
-    prompt = f"Persona: {base_persona}\nUser: {user_name}\nContext: {context}\nQuestion: {question}"
+    prompt = f"System: {base_persona}\nContext: {context}{guardrail}\nQuestion: {question}"
 
     try:
-        model_name = "llama-3.1-8b-instant" if provider == "groq" else "gpt-3.5-turbo"
+        model_name = "llama-3.1-8b-instant" if provider == "groq" else "gpt-4"
         
-        # Async-capable stream call
         stream = client.chat.completions.create(
             model=model_name,
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1,
-            max_tokens=1200,
+            max_tokens=1500,
             stream=True,
         )
         
         for chunk in stream:
             content = chunk.choices[0].delta.content if chunk.choices[0].delta.content else ""
             if content:
-                # We yield in SSE (Server-Sent Events) compatible format
                 yield f"data: {json.dumps({'content': content})}\n\n"
         
         yield "data: [DONE]\n\n"
