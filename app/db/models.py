@@ -16,8 +16,12 @@ class User(Base):
 
     id = Column(String, primary_key=True, default=generate_uuid, index=True)
     email = Column(String, unique=True, index=True, nullable=False)
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)  # Nullable for OAuth users
     created_at = Column(DateTime, default=utc_now)
+    
+    # Google OAuth fields
+    google_id = Column(String, unique=True, nullable=True, index=True)
+    profile_picture = Column(String, nullable=True)
 
     documents = relationship("Document", back_populates="user", cascade="all, delete-orphan")
     chats = relationship("Chat", back_populates="user", cascade="all, delete-orphan")

@@ -12,7 +12,7 @@ pip-log.txt
 pip-delete-this-directory.txt
 .pytest_cache/
 .coverage
-*.egg-info/
+*.egg-info/""
 dist/
 build/
 
