@@ -57,7 +57,17 @@ def generate_dynamic_suggestions(question: str, context_answer: str) -> list[str
         content = response.choices[0].message.content.strip()
         if content.startswith("```json"):
             content = content.replace("```json", "").replace("```", "").strip()
-        return json.loads(content)[:3]
+        raw = json.loads(content)[:3]
+        # Normalize: LLM may return strings or objects like {question: "..."}
+        suggestions = []
+        for item in raw:
+            if isinstance(item, str):
+                suggestions.append(item)
+            elif isinstance(item, dict):
+                suggestions.append(item.get("question", item.get("text", str(item))))
+            else:
+                suggestions.append(str(item))
+        return suggestions
     except:
         return ["Tell me more", "What next?", "Explain further"]
 

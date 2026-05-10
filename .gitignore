@@ -1,7 +1,63 @@
+# Python
 venv/
-.env
+env/
+ENV/
+.venv
 __pycache__/
-*.pyc
-data/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+*.egg-info/""
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Database
 sql_app.db
-intellidocs AI - frontend
+*.db
+data/
+chroma/
+
+# Frontend (monorepo)
+Intellidocs\ AI\ -\ frontend/node_modules/
+Intellidocs\ AI\ -\ frontend/dist/
+Intellidocs\ AI\ -\ frontend/.env.local
+Intellidocs\ AI\ -\ frontend/.vite
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.cache/
+*.tmp
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+Intellidocs AI - frontend
