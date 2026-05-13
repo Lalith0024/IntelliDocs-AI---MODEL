@@ -131,51 +131,52 @@ Ml_internshipproject/
 ```mermaid
 graph TB
     subgraph Client["Client Layer"]
-        A[React 18 Frontend<br/>Vite + TypeScript]
+        A["React 18 Frontend\nVite + TypeScript"]
     end
-    
+
     subgraph Auth["Authentication"]
-        B1[JWT Tokens<br/>7-day expiry]
-        B2[Google OAuth 2.0<br/>Auto-signup]
-        B3[Password Hashing<br/>bcrypt]
+        B1["JWT Tokens\n7-day expiry"]
+        B2["Google OAuth 2.0\nAuto-signup"]
+        B3["Password Hashing\nbcrypt"]
     end
-    
+
     subgraph API["API Layer - FastAPI"]
-        C1[/api/auth<br/>Login/Signup]
-        C2[/api/documents<br/>Upload/Retrieve]
-        C3[/api/chats/query/stream<br/>Neural Stream]
+        C1["/api/auth\nLogin/Signup"]
+        C2["/api/documents\nUpload/Retrieve"]
+        C3["/api/chats/query/stream\nNeural Stream"]
     end
-    
+
     subgraph RAG["RAG Pipeline"]
-        D1["Document Loader<br/>PDF/JSON/CSV/TXT"]
-        D2["Chunking<br/>500 tokens + overlap"]
-        D3["Embeddings<br/>BAAI/bge-small-en-v1.5"]
-        D4["Vector Store<br/>ChromaDB Persistent"]
-        D5["Hybrid Search<br/>Vector + Keyword"]
+        D1["Document Loader\nPDF/JSON/CSV/TXT"]
+        D2["Chunking\n500 tokens + overlap"]
+        D3["Embeddings\nBAAI/bge-small-en-v1.5"]
+        D4["Vector Store\nChromaDB Persistent"]
+        D5["Hybrid Search\nVector + Keyword"]
     end
-    
+
     subgraph Generation["Generation Layer"]
-        E1["Intent Detection<br/>Query/Summary/Quiz"]
-        E2["LLM Provider<br/>Groq Llama 3.1"]
-        E3["Streaming<br/>Token-by-token SSE"]
-        E4["Persona Engine<br/>Dynamic prompting"]
+        E1["Intent Detection\nQuery/Summary/Quiz"]
+        E2["LLM Provider\nGroq Llama 3.1"]
+        E3["Streaming\nToken-by-token SSE"]
+        E4["Persona Engine\nDynamic prompting"]
     end
-    
+
     subgraph DB["Data Layer"]
-        F1["SQLite/PostgreSQL<br/>User/Chat/Message"]
-        F2["ChromaDB<br/>Vector embeddings"]
-        F3["File Storage<br/>data/uploads"]
+        F1["SQLite/PostgreSQL\nUser/Chat/Message"]
+        F2["ChromaDB\nVector embeddings"]
+        F3["File Storage\ndata/uploads"]
     end
-    
-    A -->|API calls| Auth
-    Auth -->|Authenticated| API
-    API -->|Process| RAG
-    RAG -->|Retrieve context| D4
-    D5 -->|Ranked docs| Generation
-    Generation -->|Stream SSE| A
-    API -->|Persist| DB
-    RAG -->|Store chunks| F2
-    D1 -->|Load files| F3
+
+    %% Connections
+    A -->|"API calls"| Auth
+    Auth -->|"Authenticated"| API
+    API -->|"Process"| RAG
+    RAG -->|"Retrieve context"| D4
+    D5 -->|"Ranked docs"| Generation
+    Generation -->|"Stream SSE"| A
+    API -->|"Persist"| DB
+    RAG -->|"Store chunks"| F2
+    D1 -->|"Load files"| F3
 ```
 
 ### Flow: User Question → AI Answer
